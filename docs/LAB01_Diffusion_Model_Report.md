@@ -1,10 +1,8 @@
 # BÁO CÁO LAB01: CÀI ĐẶT DIFFUSION MODEL VÀ SINH ẢNH
 
 **Môn học:** Làm quen với AI Engineer  
-**Nhóm:** `<điền mã số nhóm>`  
-**Thành viên:** `<điền họ tên và MSSV>`  
-**Ngày thực hiện:** 03/09/2026  
-**Tên file khi xuất PDF:** `MSNhom_Lab01.pdf`
+**Nhóm:** `10`  
+**Thành viên:** `Phan Ngọc Đức Huy`, `Dũng`, `Đức`  
 
 ## 1. Mục tiêu
 
@@ -16,7 +14,6 @@
 
 > Spider-Man sitting on a skyscraper edge, back to camera, New York skyline at sunset, cinematic wide shot
 
-Báo cáo này chỉ trình bày phần **cài đặt Diffusion Model và sinh ảnh**, không bao gồm phần khảo sát LLM.
 
 ## 2. Kiểm tra máy trước khi cài đặt
 
@@ -50,7 +47,7 @@ Máy đã có Python 3.13.15 và có thể gọi qua Python Launcher (`py`). Mô
 C:\Users\huyph\AppData\Local\Programs\Python\Python313\python.exe
 ```
 
-Trên Command Prompt của máy này, có thể tạo môi trường mới bằng:
+Trên Command Prompt của máy, có thể tạo môi trường mới bằng:
 
 ```powershell
 cd D:\Workspace\Projects\diffusion-model-lab01
@@ -144,38 +141,45 @@ Lần chạy đầu, `StableDiffusionPipeline.from_pretrained(...)` tự tải 1
 Mã đầy đủ nằm trong file `generate_image.py`. Phần chính của chương trình:
 
 ```python
-gpu_name = torch.cuda.get_device_name(0)
-dtype = torch.float32 if "GTX 16" in gpu_name.upper() else torch.float16
+    gpu_name = torch.cuda.get_device_name(0)
+    if args.precision == "auto":
+        dtype = torch.float32 if "GTX 16" in gpu_name.upper() else torch.float16
+    else:
+        dtype = getattr(torch, args.precision)
+    print(f"Precision: {dtype}")
 
-pipe = StableDiffusionPipeline.from_pretrained(
-    "stable-diffusion-v1-5/stable-diffusion-v1-5",
-    cache_dir=CACHE_DIR,
-    dtype=dtype,
-    use_safetensors=True,
-)
+    pipe = StableDiffusionPipeline.from_pretrained(
+        MODEL_ID,
+        cache_dir=CACHE_DIR,
+        dtype=dtype,
+        use_safetensors=True,
+    )
 
-pipe.enable_sequential_cpu_offload()
-pipe.vae.enable_slicing()
+    pipe.enable_sequential_cpu_offload()
+    pipe.vae.enable_slicing()
 
-generator = torch.Generator(device="cpu").manual_seed(42)
-image = pipe(
-    prompt=(
-        "Spider-Man sitting on a skyscraper edge, back to camera, "
-        "New York skyline at sunset, cinematic wide shot"
-    ),
-    negative_prompt=(
-        "low quality, blurry, distorted, deformed, extra limbs, duplicate, "
-        "text, watermark, logo"
-    ),
-    width=768,
-    height=512,
-    num_inference_steps=25,
-    guidance_scale=7.5,
-    generator=generator,
-).images[0]
+    generator = torch.Generator(device="cpu").manual_seed(args.seed)
+    image = pipe(
+        prompt=args.prompt,
+        negative_prompt=args.negative_prompt,
+        width=args.width,
+        height=args.height,
+        num_inference_steps=args.steps,
+        guidance_scale=7.5,
+        generator=generator,
+    ).images[0]
 
-output_path = next_output_path(Path("outputs"))
-image.save(output_path)
+    extrema = image.convert("RGB").getextrema()
+    if all(channel_max <= 1 for _, channel_max in extrema):
+        raise RuntimeError(
+            "The generated image is black. Retry with --precision float32 and review "
+            "any safety-checker message printed above."
+        )
+
+    output_path = args.output or next_output_path(Path(__file__).resolve().parent / "outputs")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_path)
+    print(f"Saved image: {output_path.resolve()}")
 ```
 
 Các lựa chọn cấu hình:

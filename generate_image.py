@@ -1,9 +1,3 @@
-"""Generate the LAB01 image with Stable Diffusion v1.5.
-
-The defaults are tuned for a 4 GB NVIDIA GPU on Windows. Model weights are
-offloaded to RAM layer by layer to avoid CUDA out-of-memory errors.
-"""
-
 from __future__ import annotations
 
 import argparse
