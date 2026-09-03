@@ -25,6 +25,12 @@ Muốn chỉ định tên cụ thể:
 python generate_image.py --output outputs\spiderman.png
 ```
 
+Nhập prompt tạo ảnh theo ý muốn: 
+
+```powershell
+python generate_image.py --promt "..."
+```
+
 ## Chạy ví dụ đơn giản theo LAB01
 
 ```powershell
