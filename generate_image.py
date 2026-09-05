@@ -89,7 +89,7 @@ def main() -> None:
         width=args.width,
         height=args.height,
         num_inference_steps=args.steps,
-        guidance_scale=7.5,
+        guidance_scale=10,
         generator=generator,
     ).images[0]
 
